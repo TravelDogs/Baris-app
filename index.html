@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BARIS 2.0</title>
+<title>BARIS 2.1</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f5f1e9;color:#29241f;font-family:Arial,sans-serif}
@@ -12,6 +12,7 @@ h1{font:normal 46px Georgia,serif;letter-spacing:3px;margin:0}
 header small{color:#d5c6b5}
 nav{display:flex;justify-content:center;gap:10px;margin-top:15px}
 button{border:0;border-radius:9px;padding:12px;font-size:15px;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
 nav button{background:#51483f;color:white}
 nav button.active{background:#bd7040}
 main{max-width:950px;margin:auto;padding:15px}
@@ -23,6 +24,7 @@ main{max-width:950px;margin:auto;padding:15px}
 .red{background:#f6dddd;color:#a22}
 input,select{padding:12px;border:1px solid #ccc;border-radius:8px;font-size:16px;max-width:100%}
 input[type=text],input[type=number]{width:100%}
+input[type=checkbox]{width:20px;height:20px;vertical-align:middle}
 .hidden{display:none!important}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
 .product{background:#eee8df;text-align:left;min-height:75px}
@@ -34,6 +36,12 @@ input[type=text],input[type=number]{width:100%}
 .stat{background:white;border-radius:10px;padding:15px;flex:1;min-width:140px}
 .stat strong{display:block;font-size:23px;margin-top:8px}
 .notice{background:#fff0d6;padding:12px;border-radius:8px;font-size:13px}
+.discountBox{background:#faf5ed;border:1px solid #e5d5bd;border-radius:10px;padding:15px;margin:15px 0}
+.discountLine{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #e5d5bd}
+.summary{border-top:1px solid #ddd;margin-top:15px;padding-top:12px}
+.summary p{display:flex;justify-content:space-between;gap:10px;margin:9px 0}
+.muted{color:#746b62;font-size:13px}
+.positive{color:#287447}
 @media(min-width:650px){.grid{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
@@ -41,7 +49,7 @@ input[type=text],input[type=number]{width:100%}
 
 <header>
 <h1>BARIS</h1>
-<small>GESTIÓN DE BARRA</small>
+<small>GESTIÓN DE BARRA · V2.1</small>
 <nav>
 <button id="tabBar" class="active" onclick="go('bar')">🍺 Barra</button>
 <button id="tabAdmin" onclick="go('admin')">📊 Administración</button>
@@ -49,9 +57,13 @@ input[type=text],input[type=number]{width:100%}
 </header>
 
 <main>
-<p class="notice">DEMO: Los datos se guardan únicamente en este navegador. No utilizar para operaciones reales sin implementar respaldos y recuperación de datos.</p>
+<p class="notice">
+DEMO: Los datos se guardan únicamente en este navegador.
+No utilizar para operaciones reales sin implementar respaldos y recuperación.
+</p>
 
 <section id="bar">
+
 <div id="home">
 <div class="row between">
 <h2>Cuentas abiertas</h2>
@@ -72,19 +84,48 @@ input[type=text],input[type=number]{width:100%}
 
 <div id="detail" class="hidden">
 <button onclick="showHome()">← Volver</button>
+
 <div class="card">
 <h2 id="customer"></h2>
 <div id="items"></div>
-<p>Total consumido: <strong id="gross"></strong></p>
-<p>Pagado: <strong id="paid"></strong></p>
-<p class="total">Pendiente: <span id="due"></span></p>
+
+<div class="discountBox">
+<h3>🏷️ Descuento</h3>
+<p class="muted">Ingresá un porcentaje y elegí qué consumos tienen descuento.</p>
+
+<label>Porcentaje (%)</label>
+<input id="discountPercent" type="number" min="0" max="100"
+placeholder="Ej: 10 o 20">
+
+<p><strong>Productos incluidos</strong></p>
+<div id="discountItems"></div>
+
+<p>
+<button id="applyDiscountBtn" class="orange" onclick="applyDiscount()">
+Aplicar descuento
+</button>
+<button id="clearDiscountBtn" onclick="clearDiscount()">
+Quitar descuento
+</button>
+</p>
+<p id="discountStatus" class="muted"></p>
+</div>
+
+<div class="summary">
+<p><span>Subtotal:</span><strong id="gross"></strong></p>
+<p><span>Descuento:</span><strong id="discountValue" class="positive"></strong></p>
+<p><span>Total con descuento:</span><strong id="net"></strong></p>
+<p><span>Pagado:</span><strong id="paid"></strong></p>
+<p class="total"><span>Pendiente:</span><span id="due"></span></p>
+</div>
+
 <button class="orange" onclick="showPayment()">Registrar pago</button>
 <button class="red" onclick="cancelAccount()">Anular cuenta</button>
 
 <div id="payment" class="card hidden">
 <h3>Registrar pago</h3>
 <label>Importe</label>
-<input id="amount" type="number" min="1">
+<input id="amount" type="number" min="1" step="1">
 <p>Medio de pago</p>
 <select id="method">
 <option>Efectivo</option>
@@ -99,15 +140,21 @@ input[type=text],input[type=number]{width:100%}
 </div>
 
 <h3>Agregar consumo</h3>
+<p id="lockedMessage" class="notice hidden">
+Esta cuenta ya tiene pagos registrados. No se pueden modificar los consumos ni el descuento.
+</p>
 <div id="categories" class="tabs"></div>
 <div id="products" class="grid"></div>
 </div>
+
 </section>
 
 <section id="admin" class="hidden">
 <h2>Administración</h2>
+
 <div class="row">
 <div class="stat">Vendido hoy<strong id="sales">$0</strong></div>
+<div class="stat">Descuentos hoy<strong id="discountsToday">$0</strong></div>
 <div class="stat">Cuentas cerradas<strong id="closed">0</strong></div>
 <div class="stat">Efectivo<strong id="cash">$0</strong></div>
 <div class="stat">Electrónico<strong id="electronic">$0</strong></div>
@@ -145,13 +192,16 @@ input[type=text],input[type=number]{width:100%}
 <div class="card">
 <h3>Respaldo de información</h3>
 <button onclick="exportData()">Exportar datos</button>
-<p><small>El archivo permite conservar una copia, pero esta demo todavía no permite restaurarla automáticamente.</small></p>
+<p><small>La exportación permite conservar una copia.
+Esta demo todavía no permite restaurarla automáticamente.</small></p>
 </div>
 </section>
+
 </main>
 
 <script>
 const KEY="baris_v2";
+
 const defaults={
 "Cervezas":[["Golden",4500],["IPA",5000],["American IPA",5200],["Session IPA",5000],["Stout",5000],["Roja",4800]],
 "Panchos":[["Clásico",4500],["Queso y cebolla",5000],["Panceta y queso",5500],["Roquefort",5500],["Chucrut",5000]],
@@ -164,6 +214,7 @@ const defaults={
 const $=id=>document.getElementById(id);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
 const money=n=>"$"+n.toLocaleString("es-AR");
+
 const makeDB=()=>({
 accounts:[],
 history:[],
@@ -172,17 +223,29 @@ items.map(([name,price])=>({id:uid(),cat,name,price})))
 });
 
 let db;
+let storageOK=true;
+
 try{
-db=JSON.parse(localStorage.getItem(KEY))||makeDB();
-if(!Array.isArray(db.accounts)||!Array.isArray(db.history)||!Array.isArray(db.products))throw Error();
+const stored=localStorage.getItem(KEY);
+db=stored?JSON.parse(stored):makeDB();
+if(!Array.isArray(db.accounts)||!Array.isArray(db.history)||!Array.isArray(db.products)){
+throw Error("Formato inválido");
+}
 }catch(e){
+storageOK=false;
 db=makeDB();
-alert("No se pudieron leer los datos guardados.");
+alert("No se pudieron leer los datos guardados. No se sobrescribirán hasta resolver el problema.");
 }
 
-let current=null,category="Cervezas",editing=null;
+let current=null;
+let category="Cervezas";
+let editing=null;
 
 function save(){
+if(!storageOK){
+alert("Los datos guardados no se pudieron leer. No se guardarán cambios.");
+return false;
+}
 try{
 localStorage.setItem(KEY,JSON.stringify(db));
 return true;
@@ -192,14 +255,43 @@ return false;
 }
 }
 
+function update(mutator){
+const before=JSON.stringify(db);
+mutator();
+if(save())return true;
+db=JSON.parse(before);
+return false;
+}
+
 function total(a){
 return a.items.reduce((s,i)=>s+i.price*i.qty,0);
 }
+
 function paid(a){
 return a.payments.reduce((s,p)=>s+p.amount,0);
 }
-function due(a){return Math.max(0,total(a)-paid(a));}
-function account(){return db.accounts.find(a=>a.id===current);}
+
+function discountAmount(a){
+const percent=a.discountPercent||0;
+const selected=a.discountItems||[];
+const eligible=a.items
+.filter(i=>selected.includes(i.id))
+.reduce((s,i)=>s+i.price*i.qty,0);
+return Math.round(eligible*percent/100);
+}
+
+function finalTotal(a){
+return Math.max(0,total(a)-discountAmount(a));
+}
+
+function due(a){
+return Math.max(0,finalTotal(a)-paid(a));
+}
+
+function account(){
+return db.accounts.find(a=>a.id===current);
+}
+
 function hide(id){$(id).classList.add("hidden");}
 function show(id){$(id).classList.remove("hidden");}
 
@@ -208,12 +300,14 @@ const e=document.createElement(tag);
 if(text!==undefined)e.textContent=text;
 return e;
 }
+
 function btn(text,fn,cls=""){
 const b=el("button",text);
 b.className=cls;
 b.onclick=fn;
 return b;
 }
+
 function row(parent,text,fn,action="Abrir"){
 const d=el("div");
 d.className="card row between";
@@ -232,151 +326,395 @@ else showHome();
 
 function showHome(){
 current=null;
-show("home");hide("new");hide("detail");
+show("home");
+hide("new");
+hide("detail");
 renderHome();
 }
+
 function showNew(){
-hide("home");hide("detail");show("new");
+hide("home");
+hide("detail");
+show("new");
 $("name").value="";
 }
+
 function createAccount(){
 const name=$("name").value.trim();
 if(!name)return alert("Ingresá un nombre.");
-const a={id:uid(),name,items:[],payments:[],created:new Date().toISOString()};
-db.accounts.push(a);
-if(save())openAccount(a.id);
+
+const a={
+id:uid(),
+name,
+items:[],
+payments:[],
+discountPercent:0,
+discountItems:[],
+created:new Date().toISOString()
+};
+
+if(update(()=>db.accounts.push(a)))openAccount(a.id);
 }
+
 function renderHome(){
 const box=$("accounts");
 box.replaceChildren();
 const q=$("search").value.toLowerCase();
 const found=db.accounts.filter(a=>a.name.toLowerCase().includes(q));
+
 if(!found.length)box.append(el("p","No hay cuentas para mostrar."));
-found.forEach(a=>row(box,a.name+" — Pendiente: "+money(due(a)),()=>openAccount(a.id)));
+
+found.forEach(a=>
+row(box,a.name+" — Pendiente: "+money(due(a)),()=>openAccount(a.id))
+);
 }
+
 function openAccount(id){
 current=id;
-hide("home");hide("new");show("detail");
+hide("home");
+hide("new");
+show("detail");
 hidePayment();
-renderDetail();renderMenu();
+renderDetail();
+renderMenu();
 }
+
 function renderDetail(){
 const a=account();
 if(!a)return showHome();
+
 $("customer").textContent=a.name;
 $("gross").textContent=money(total(a));
+$("discountValue").textContent="-"+money(discountAmount(a));
+$("net").textContent=money(finalTotal(a));
 $("paid").textContent=money(paid(a));
 $("due").textContent=money(due(a));
+
 const box=$("items");
 box.replaceChildren();
+
 a.items.forEach(i=>{
 const d=el("div");
 d.className="item";
 d.append(el("span",i.qty+" × "+i.name+" — "+money(i.qty*i.price)));
-d.append(btn("−",()=>removeItem(i.id),"red"));
+const minus=btn("−",()=>removeItem(i.id),"red");
+minus.disabled=a.payments.length>0;
+d.append(minus);
 box.append(d);
 });
+
 if(!a.items.length)box.append(el("p","Sin consumos."));
+
+$("lockedMessage").classList.toggle("hidden",a.payments.length===0);
+renderDiscount();
 }
+
+function renderDiscount(){
+const a=account();
+if(!a)return;
+
+$("discountPercent").value=a.discountPercent||0;
+
+const box=$("discountItems");
+box.replaceChildren();
+
+const selected=a.discountItems||[];
+const hasDiscount=(a.discountPercent||0)>0;
+
+a.items.forEach(i=>{
+const label=el("label");
+label.className="discountLine";
+
+const check=el("input");
+check.type="checkbox";
+check.className="discountCheck";
+check.value=i.id;
+check.checked=hasDiscount?selected.includes(i.id):true;
+check.disabled=a.payments.length>0;
+
+label.append(check,el("span",i.qty+" × "+i.name+" — "+money(i.qty*i.price)));
+box.append(label);
+});
+
+const locked=a.payments.length>0;
+$("discountPercent").disabled=locked;
+$("applyDiscountBtn").disabled=locked;
+$("clearDiscountBtn").disabled=locked;
+
+$("discountStatus").textContent=hasDiscount
+?"Descuento aplicado: "+a.discountPercent+"% · Ahorro: "+money(discountAmount(a))
+:"Sin descuento aplicado.";
+}
+
+function applyDiscount(){
+const a=account();
+if(!a)return;
+
+if(a.payments.length>0){
+alert("No se puede modificar el descuento después de registrar pagos.");
+return;
+}
+
+const raw=$("discountPercent").value.trim();
+const percent=Number(raw);
+
+if(raw===""||!Number.isFinite(percent)||percent<0||percent>100){
+alert("Ingresá un porcentaje entre 0 y 100.");
+return;
+}
+
+const selected=[...document.querySelectorAll(".discountCheck:checked")]
+.map(c=>c.value);
+
+if(percent>0&&!selected.length){
+alert("Seleccioná al menos un producto.");
+return;
+}
+
+const ok=update(()=>{
+a.discountPercent=percent;
+a.discountItems=percent>0?selected:[];
+});
+
+if(ok){
+renderDetail();
+hidePayment();
+}
+}
+
+function clearDiscount(){
+const a=account();
+if(!a||a.payments.length>0)return;
+
+if(update(()=>{
+a.discountPercent=0;
+a.discountItems=[];
+})){
+renderDetail();
+hidePayment();
+}
+}
+
 function renderMenu(){
 const tabs=$("categories");
 tabs.replaceChildren();
+
 const cats=[...new Set(db.products.map(p=>p.cat))];
 if(!cats.includes(category))category=cats[0]||"";
+
 cats.forEach(c=>tabs.append(btn(c,()=>{
-category=c;renderMenu();
+category=c;
+renderMenu();
 },c===category?"orange":"")));
+
 const grid=$("products");
 grid.replaceChildren();
+
+const a=account();
+const locked=!a||a.payments.length>0;
+
 db.products.filter(p=>p.cat===category).forEach(p=>{
 const b=el("button");
 b.className="product";
 b.append(el("strong",p.name),el("small",money(p.price)));
+b.disabled=locked;
 b.onclick=()=>addItem(p);
 grid.append(b);
 });
 }
+
 function addItem(p){
 const a=account();
 if(!a)return;
+
+if(a.payments.length>0){
+alert("No se pueden agregar consumos después de registrar un pago.");
+return;
+}
+
+const ok=update(()=>{
 const old=a.items.find(i=>i.productId===p.id&&i.price===p.price);
 if(old)old.qty++;
-else a.items.push({id:uid(),productId:p.id,name:p.name,price:p.price,qty:1});
-if(save())renderDetail();
+else a.items.push({
+id:uid(),
+productId:p.id,
+name:p.name,
+price:p.price,
+qty:1
+});
+});
+
+if(ok){
+renderDetail();
+renderMenu();
 }
+}
+
 function removeItem(id){
 const a=account();
-const i=a?.items.find(x=>x.id===id);
-if(!i)return;
-if(i.qty>1)i.qty--;
-else a.items=a.items.filter(x=>x.id!==id);
-if(save())renderDetail();
+if(!a)return;
+
+if(a.payments.length>0){
+alert("No se pueden modificar consumos después de registrar un pago.");
+return;
 }
+
+const ok=update(()=>{
+const i=a.items.find(x=>x.id===id);
+if(!i)return;
+
+if(i.qty>1)i.qty--;
+else{
+a.items=a.items.filter(x=>x.id!==id);
+a.discountItems=(a.discountItems||[]).filter(x=>x!==id);
+}
+});
+
+if(ok){
+renderDetail();
+renderMenu();
+}
+}
+
 function showPayment(){
 const a=account();
 if(!a||!a.items.length)return alert("Agregá consumos primero.");
+
+if(due(a)<=0){
+return alert("Esta cuenta no tiene saldo pendiente.");
+}
+
 $("amount").value=due(a);
 show("payment");
 }
+
 function hidePayment(){hide("payment");}
+
 function registerPayment(){
 const a=account();
 if(!a)return;
+
 const amount=Number($("amount").value);
-if(!Number.isSafeInteger(amount)||amount<=0||amount>due(a))
+
+if(!Number.isSafeInteger(amount)||amount<=0||amount>due(a)){
 return alert("Importe inválido o superior al saldo.");
-a.payments.push({amount,method:$("method").value,date:new Date().toISOString()});
-if(due(a)===0){
+}
+
+const method=$("method").value;
+const closing=amount===due(a);
+
+const ok=update(()=>{
+a.payments.push({
+amount,
+method,
+date:new Date().toISOString()
+});
+
+if(closing){
 db.accounts=db.accounts.filter(x=>x.id!==a.id);
 db.history.unshift({...a,closed:new Date().toISOString()});
-if(save()){
-alert("Cuenta cerrada. Total: "+money(total(a)));
+}
+});
+
+if(!ok)return;
+
+if(closing){
+alert("Cuenta cerrada. Total: "+money(finalTotal(a)));
 showHome();
+}else{
+hidePayment();
+renderDetail();
+renderMenu();
 }
-}else if(save()){
-hidePayment();renderDetail();
 }
-}
+
 function cancelAccount(){
 const a=account();
 if(!a)return;
-if(a.payments.length)return alert("No se puede anular una cuenta con pagos registrados.");
+
+if(a.payments.length){
+return alert("No se puede anular una cuenta con pagos registrados.");
+}
+
 if(!confirm("¿Anular esta cuenta?"))return;
+
+if(update(()=>{
 db.accounts=db.accounts.filter(x=>x.id!==a.id);
-if(save())showHome();
+}))showHome();
 }
 
 function isToday(date){
 return new Date(date).toDateString()===new Date().toDateString();
 }
+
 function renderAdmin(){
 const today=db.history.filter(a=>isToday(a.closed));
-$("sales").textContent=money(today.reduce((s,a)=>s+total(a),0));
+
+$("sales").textContent=money(
+today.reduce((s,a)=>s+finalTotal(a),0)
+);
+
+$("discountsToday").textContent=money(
+today.reduce((s,a)=>s+discountAmount(a),0)
+);
+
 $("closed").textContent=today.length;
+
 const payments=today.flatMap(a=>a.payments);
-$("cash").textContent=money(payments.filter(p=>p.method==="Efectivo").reduce((s,p)=>s+p.amount,0));
-$("electronic").textContent=money(payments.filter(p=>p.method==="Electrónico").reduce((s,p)=>s+p.amount,0));
+
+$("cash").textContent=money(
+payments.filter(p=>p.method==="Efectivo")
+.reduce((s,p)=>s+p.amount,0)
+);
+
+$("electronic").textContent=money(
+payments.filter(p=>p.method==="Electrónico")
+.reduce((s,p)=>s+p.amount,0)
+);
 
 const counts={};
+
 today.forEach(a=>a.items.forEach(i=>{
 counts[i.name]=(counts[i.name]||0)+i.qty;
 }));
+
 const top=$("top");
 top.replaceChildren();
-Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10).forEach(([name,qty])=>{
+
+Object.entries(counts)
+.sort((a,b)=>b[1]-a[1])
+.slice(0,10)
+.forEach(([name,qty])=>{
 top.append(el("p",name+" — "+qty+" unidades"));
 });
+
 if(!top.children.length)top.append(el("p","Sin ventas cerradas hoy."));
 
 const history=$("history");
 history.replaceChildren();
+
 db.history.slice(0,30).forEach(a=>{
-history.append(el("p",a.name+" — "+money(total(a))+" — "+new Date(a.closed).toLocaleString("es-AR")));
+const d=el("div");
+d.className="item";
+
+const detail=el("div");
+detail.append(
+el("strong",a.name+" — "+money(finalTotal(a))),
+el("div","Descuento: "+money(discountAmount(a))),
+el("small",new Date(a.closed).toLocaleString("es-AR"))
+);
+
+d.append(detail);
+history.append(d);
 });
-if(!history.children.length)history.append(el("p","Sin cuentas cerradas."));
+
+if(!history.children.length){
+history.append(el("p","Sin cuentas cerradas."));
+}
 
 const catalog=$("catalog");
 catalog.replaceChildren();
+
 db.products.forEach(p=>{
 const d=el("div");
 d.className="item";
@@ -385,40 +723,69 @@ d.append(btn("Editar",()=>editProduct(p.id)));
 catalog.append(d);
 });
 }
+
 function editProduct(id=null){
 editing=id;
 const p=db.products.find(x=>x.id===id);
+
 $("pname").value=p?.name||"";
 $("pcategory").value=p?.cat||"";
 $("pprice").value=p?.price??"";
+
 show("editor");
 }
-function hideEditor(){hide("editor");editing=null;}
+
+function hideEditor(){
+hide("editor");
+editing=null;
+}
+
 function saveProduct(){
 const name=$("pname").value.trim();
 const cat=$("pcategory").value.trim();
-const price=Number($("pprice").value);
-if(!name||!cat||$("pprice").value===""||!Number.isSafeInteger(price)||price<0)
+const raw=$("pprice").value;
+const price=Number(raw);
+
+if(!name||!cat||raw===""||!Number.isSafeInteger(price)||price<0){
 return alert("Completá correctamente todos los campos.");
+}
+
+const ok=update(()=>{
 const p=db.products.find(x=>x.id===editing);
+
 if(p)Object.assign(p,{name,cat,price});
 else db.products.push({id:uid(),name,cat,price});
-if(save()){hideEditor();renderAdmin();}
+});
+
+if(ok){
+hideEditor();
+renderAdmin();
 }
+}
+
 function exportData(){
-const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
+const blob=new Blob(
+[JSON.stringify(db,null,2)],
+{type:"application/json"}
+);
+
 const url=URL.createObjectURL(blob);
 const a=el("a");
+
 a.href=url;
 a.download="baris-respaldo.json";
+
 document.body.append(a);
 a.click();
 a.remove();
+
 setTimeout(()=>URL.revokeObjectURL(url),3000);
 }
+
 $("name").addEventListener("keydown",e=>{
 if(e.key==="Enter")createAccount();
 });
+
 renderHome();
 </script>
 </body>
