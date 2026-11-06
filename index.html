@@ -2,33 +2,38 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BARIS | Gestión de barra</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BARIS 2.0</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#f4f1eb;color:#252525;font-family:Arial,sans-serif}
-header{background:#242424;color:white;padding:20px;text-align:center}
-header h1{font-family:"Times New Roman",serif;font-size:42px;margin:0}
-header p{margin:5px;font-size:13px;color:#ccc}
-main{max-width:900px;margin:auto;padding:18px}
-button,input{font-size:16px}
-button{border:0;border-radius:8px;padding:12px;cursor:pointer}
-.primary{background:#252525;color:white}
-.secondary{background:#e3ded5}
-.danger{background:#a83232;color:white}
-.card{background:white;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #0001}
-input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;margin:10px 0}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.hidden{display:none}
-.tabs{display:flex;gap:8px;overflow:auto;margin:15px 0}
+body{margin:0;background:#f5f1e9;color:#29241f;font-family:Arial,sans-serif}
+header{background:#29241f;color:white;padding:20px;text-align:center}
+h1{font:normal 46px Georgia,serif;letter-spacing:3px;margin:0}
+header small{color:#d5c6b5}
+nav{display:flex;justify-content:center;gap:10px;margin-top:15px}
+button{border:0;border-radius:9px;padding:12px;font-size:15px;cursor:pointer}
+nav button{background:#51483f;color:white}
+nav button.active{background:#bd7040}
+main{max-width:950px;margin:auto;padding:15px}
+.card{background:white;border-radius:12px;padding:17px;margin:12px 0;box-shadow:0 2px 8px #0001}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.primary{background:#29241f;color:white}
+.orange{background:#bd7040;color:white}
+.red{background:#f6dddd;color:#a22}
+input,select{padding:12px;border:1px solid #ccc;border-radius:8px;font-size:16px;max-width:100%}
+input[type=text],input[type=number]{width:100%}
+.hidden{display:none!important}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.product{background:#eee8df;text-align:left;min-height:75px}
+.product small{display:block;margin-top:6px}
+.tabs{display:flex;gap:7px;overflow:auto;margin:15px 0}
 .tabs button{white-space:nowrap}
-.active{background:#252525;color:white}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.product{background:#f1eee8;text-align:left;min-height:75px}
-.product small{display:block;margin-top:6px;color:#666}
-.account{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 0;border-bottom:1px solid #eee}
 .total{font-size:24px;font-weight:bold}
-.item{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eee}
+.stat{background:white;border-radius:10px;padding:15px;flex:1;min-width:140px}
+.stat strong{display:block;font-size:23px;margin-top:8px}
+.notice{background:#fff0d6;padding:12px;border-radius:8px;font-size:13px}
 @media(min-width:650px){.grid{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
@@ -36,217 +41,385 @@ input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;margin:10p
 
 <header>
 <h1>BARIS</h1>
-<p>GESTIÓN DE BARRA</p>
+<small>GESTIÓN DE BARRA</small>
+<nav>
+<button id="tabBar" class="active" onclick="go('bar')">🍺 Barra</button>
+<button id="tabAdmin" onclick="go('admin')">📊 Administración</button>
+</nav>
 </header>
 
 <main>
-<section id="home">
-<div class="row">
-<h2 style="flex:1">Cuentas abiertas</h2>
-<button class="primary" onclick="showNew()">+ Nueva cuenta</button>
+<p class="notice">DEMO: Los datos se guardan únicamente en este navegador. No utilizar para operaciones reales sin implementar respaldos y recuperación de datos.</p>
+
+<section id="bar">
+<div id="home">
+<div class="row between">
+<h2>Cuentas abiertas</h2>
+<button class="orange" onclick="showNew()">+ Nueva cuenta</button>
 </div>
+<input id="search" placeholder="Buscar cliente..." oninput="renderHome()">
 <div id="accounts"></div>
-</section>
-
-<section id="newAccount" class="card hidden">
-<h2>Abrir cuenta</h2>
-<input id="customerName" placeholder="Nombre del cliente">
-<div class="row">
-<button class="primary" onclick="createAccount()">Abrir cuenta</button>
-<button class="secondary" onclick="showHome()">Cancelar</button>
 </div>
-</section>
 
-<section id="detail" class="hidden">
-<button class="secondary" onclick="showHome()">← Volver</button>
+<div id="new" class="card hidden">
+<h2>Nueva cuenta</h2>
+<input id="name" placeholder="Nombre del cliente">
+<p>
+<button class="orange" onclick="createAccount()">Abrir cuenta</button>
+<button onclick="showHome()">Cancelar</button>
+</p>
+</div>
+
+<div id="detail" class="hidden">
+<button onclick="showHome()">← Volver</button>
 <div class="card">
-<h2 id="accountTitle"></h2>
+<h2 id="customer"></h2>
 <div id="items"></div>
-<p class="total" id="total"></p>
-<button class="danger" onclick="closeAccount()">Cerrar cuenta</button>
+<p>Total consumido: <strong id="gross"></strong></p>
+<p>Pagado: <strong id="paid"></strong></p>
+<p class="total">Pendiente: <span id="due"></span></p>
+<button class="orange" onclick="showPayment()">Registrar pago</button>
+<button class="red" onclick="cancelAccount()">Anular cuenta</button>
+
+<div id="payment" class="card hidden">
+<h3>Registrar pago</h3>
+<label>Importe</label>
+<input id="amount" type="number" min="1">
+<p>Medio de pago</p>
+<select id="method">
+<option>Efectivo</option>
+<option>Electrónico</option>
+</select>
+<p>
+<button class="orange" onclick="registerPayment()">Confirmar pago</button>
+<button onclick="hidePayment()">Cancelar</button>
+</p>
+<small>Para pagos mixtos, registrá cada importe por separado.</small>
 </div>
+</div>
+
 <h3>Agregar consumo</h3>
-<div class="tabs" id="tabs"></div>
-<div class="grid" id="products"></div>
+<div id="categories" class="tabs"></div>
+<div id="products" class="grid"></div>
+</div>
+</section>
+
+<section id="admin" class="hidden">
+<h2>Administración</h2>
+<div class="row">
+<div class="stat">Vendido hoy<strong id="sales">$0</strong></div>
+<div class="stat">Cuentas cerradas<strong id="closed">0</strong></div>
+<div class="stat">Efectivo<strong id="cash">$0</strong></div>
+<div class="stat">Electrónico<strong id="electronic">$0</strong></div>
+</div>
+
+<div class="card">
+<h3>Productos más vendidos hoy</h3>
+<div id="top"></div>
+</div>
+
+<div class="card">
+<h3>Historial de cuentas cerradas</h3>
+<div id="history"></div>
+</div>
+
+<div class="card">
+<div class="row between">
+<h3>Productos y precios</h3>
+<button class="orange" onclick="editProduct()">+ Producto</button>
+</div>
+<div id="catalog"></div>
+
+<div id="editor" class="hidden">
+<h3>Editar producto</h3>
+<p>Nombre</p><input id="pname">
+<p>Categoría</p><input id="pcategory">
+<p>Precio</p><input id="pprice" type="number">
+<p>
+<button class="orange" onclick="saveProduct()">Guardar</button>
+<button onclick="hideEditor()">Cancelar</button>
+</p>
+</div>
+</div>
+
+<div class="card">
+<h3>Respaldo de información</h3>
+<button onclick="exportData()">Exportar datos</button>
+<p><small>El archivo permite conservar una copia, pero esta demo todavía no permite restaurarla automáticamente.</small></p>
+</div>
 </section>
 </main>
 
 <script>
-const menu={
-"Cervezas":[
-["Golden",4500],["IPA",5000],["American IPA",5200],
-["Session IPA",5000],["Stout",5000],["Roja",4800]
-],
-"Panchos":[
-["Clásico",4500],["Queso y cebolla",5000],
-["Panceta y queso",5500],["Roquefort",5500],
-["Chucrut",5000]
-],
-"Pizzas":[
-["Margarita",12000],["Papa",13000],
-["Champiñones",14000]
-],
-"Pierogis":[
-["Carne",9000],["Papa",8500],["Repollo",8500]
-],
-"Tragos":[
-["Fernet",6500],["Gin Tonic",7000],["Whisky",8000]
-],
-"Otros":[
-["Cerveza en botella",6000],["Vino",18000]
-]
+const KEY="baris_v2";
+const defaults={
+"Cervezas":[["Golden",4500],["IPA",5000],["American IPA",5200],["Session IPA",5000],["Stout",5000],["Roja",4800]],
+"Panchos":[["Clásico",4500],["Queso y cebolla",5000],["Panceta y queso",5500],["Roquefort",5500],["Chucrut",5000]],
+"Pizzas":[["Margarita",12000],["Papa",13000],["Champiñones",14000]],
+"Pierogis":[["Carne",9000],["Papa",8500],["Repollo",8500]],
+"Tragos":[["Fernet",6500],["Gin Tonic",7000],["Whisky",8000]],
+"Otros":[["Cerveza en botella",6000],["Vino",18000]]
 };
 
-let accounts=JSON.parse(localStorage.getItem("barisAccounts")||"[]");
-let current=null;
-let category="Cervezas";
+const $=id=>document.getElementById(id);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
+const money=n=>"$"+n.toLocaleString("es-AR");
+const makeDB=()=>({
+accounts:[],
+history:[],
+products:Object.entries(defaults).flatMap(([cat,items])=>
+items.map(([name,price])=>({id:uid(),cat,name,price})))
+});
+
+let db;
+try{
+db=JSON.parse(localStorage.getItem(KEY))||makeDB();
+if(!Array.isArray(db.accounts)||!Array.isArray(db.history)||!Array.isArray(db.products))throw Error();
+}catch(e){
+db=makeDB();
+alert("No se pudieron leer los datos guardados.");
+}
+
+let current=null,category="Cervezas",editing=null;
 
 function save(){
-localStorage.setItem("barisAccounts",JSON.stringify(accounts));
+try{
+localStorage.setItem(KEY,JSON.stringify(db));
+return true;
+}catch(e){
+alert("Error al guardar. No continúes registrando consumos.");
+return false;
+}
 }
 
-function money(n){
-return "$"+n.toLocaleString("es-AR");
+function total(a){
+return a.items.reduce((s,i)=>s+i.price*i.qty,0);
+}
+function paid(a){
+return a.payments.reduce((s,p)=>s+p.amount,0);
+}
+function due(a){return Math.max(0,total(a)-paid(a));}
+function account(){return db.accounts.find(a=>a.id===current);}
+function hide(id){$(id).classList.add("hidden");}
+function show(id){$(id).classList.remove("hidden");}
+
+function el(tag,text){
+const e=document.createElement(tag);
+if(text!==undefined)e.textContent=text;
+return e;
+}
+function btn(text,fn,cls=""){
+const b=el("button",text);
+b.className=cls;
+b.onclick=fn;
+return b;
+}
+function row(parent,text,fn,action="Abrir"){
+const d=el("div");
+d.className="card row between";
+d.append(el("span",text),btn(action,fn,"primary"));
+parent.append(d);
 }
 
-function hideAll(){
-document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+function go(page){
+$("bar").classList.toggle("hidden",page!=="bar");
+$("admin").classList.toggle("hidden",page!=="admin");
+$("tabBar").classList.toggle("active",page==="bar");
+$("tabAdmin").classList.toggle("active",page==="admin");
+if(page==="admin")renderAdmin();
+else showHome();
 }
 
 function showHome(){
 current=null;
-hideAll();
-document.getElementById("home").classList.remove("hidden");
-renderAccounts();
+show("home");hide("new");hide("detail");
+renderHome();
 }
-
 function showNew(){
-hideAll();
-document.getElementById("newAccount").classList.remove("hidden");
-document.getElementById("customerName").value="";
-document.getElementById("customerName").focus();
+hide("home");hide("detail");show("new");
+$("name").value="";
 }
-
 function createAccount(){
-const name=document.getElementById("customerName").value.trim();
-if(!name){alert("Ingresá un nombre");return;}
-const id=Date.now();
-accounts.push({id,name,items:[]});
-save();
-openAccount(id);
+const name=$("name").value.trim();
+if(!name)return alert("Ingresá un nombre.");
+const a={id:uid(),name,items:[],payments:[],created:new Date().toISOString()};
+db.accounts.push(a);
+if(save())openAccount(a.id);
 }
-
-function accountTotal(a){
-return a.items.reduce((sum,i)=>sum+i.price*i.qty,0);
+function renderHome(){
+const box=$("accounts");
+box.replaceChildren();
+const q=$("search").value.toLowerCase();
+const found=db.accounts.filter(a=>a.name.toLowerCase().includes(q));
+if(!found.length)box.append(el("p","No hay cuentas para mostrar."));
+found.forEach(a=>row(box,a.name+" — Pendiente: "+money(due(a)),()=>openAccount(a.id)));
 }
-
-function renderAccounts(){
-const box=document.getElementById("accounts");
-box.innerHTML="";
-if(!accounts.length){
-box.innerHTML='<div class="card">No hay cuentas abiertas.</div>';
-return;
-}
-accounts.forEach(a=>{
-const div=document.createElement("div");
-div.className="card account";
-const info=document.createElement("div");
-info.innerHTML="<strong></strong><br><small></small>";
-info.querySelector("strong").textContent=a.name;
-info.querySelector("small").textContent=money(accountTotal(a));
-const btn=document.createElement("button");
-btn.className="primary";
-btn.textContent="Abrir";
-btn.onclick=()=>openAccount(a.id);
-div.append(info,btn);
-box.appendChild(div);
-});
-}
-
 function openAccount(id){
 current=id;
-hideAll();
-document.getElementById("detail").classList.remove("hidden");
-renderDetail();
-renderMenu();
+hide("home");hide("new");show("detail");
+hidePayment();
+renderDetail();renderMenu();
 }
-
 function renderDetail(){
-const a=accounts.find(x=>x.id===current);
-if(!a){showHome();return;}
-document.getElementById("accountTitle").textContent=a.name;
-const box=document.getElementById("items");
-box.innerHTML="";
-if(!a.items.length){
-box.textContent="Todavía no hay consumos.";
-}
-a.items.forEach((i,index)=>{
-const row=document.createElement("div");
-row.className="item";
-const label=document.createElement("span");
-label.textContent=i.qty+" × "+i.name+" — "+money(i.qty*i.price);
-const remove=document.createElement("button");
-remove.className="secondary";
-remove.textContent="−";
-remove.onclick=()=>removeItem(index);
-row.append(label,remove);
-box.appendChild(row);
+const a=account();
+if(!a)return showHome();
+$("customer").textContent=a.name;
+$("gross").textContent=money(total(a));
+$("paid").textContent=money(paid(a));
+$("due").textContent=money(due(a));
+const box=$("items");
+box.replaceChildren();
+a.items.forEach(i=>{
+const d=el("div");
+d.className="item";
+d.append(el("span",i.qty+" × "+i.name+" — "+money(i.qty*i.price)));
+d.append(btn("−",()=>removeItem(i.id),"red"));
+box.append(d);
 });
-document.getElementById("total").textContent="Total: "+money(accountTotal(a));
+if(!a.items.length)box.append(el("p","Sin consumos."));
 }
-
 function renderMenu(){
-const tabs=document.getElementById("tabs");
-tabs.innerHTML="";
-Object.keys(menu).forEach(cat=>{
-const b=document.createElement("button");
-b.textContent=cat;
-b.className=cat===category?"active":"secondary";
-b.onclick=()=>{category=cat;renderMenu();};
-tabs.appendChild(b);
-});
-const grid=document.getElementById("products");
-grid.innerHTML="";
-menu[category].forEach(([name,price])=>{
-const b=document.createElement("button");
+const tabs=$("categories");
+tabs.replaceChildren();
+const cats=[...new Set(db.products.map(p=>p.cat))];
+if(!cats.includes(category))category=cats[0]||"";
+cats.forEach(c=>tabs.append(btn(c,()=>{
+category=c;renderMenu();
+},c===category?"orange":"")));
+const grid=$("products");
+grid.replaceChildren();
+db.products.filter(p=>p.cat===category).forEach(p=>{
+const b=el("button");
 b.className="product";
-b.innerHTML="<strong></strong><small></small>";
-b.querySelector("strong").textContent=name;
-b.querySelector("small").textContent=money(price);
-b.onclick=()=>addItem(name,price);
-grid.appendChild(b);
+b.append(el("strong",p.name),el("small",money(p.price)));
+b.onclick=()=>addItem(p);
+grid.append(b);
 });
 }
-
-function addItem(name,price){
-const a=accounts.find(x=>x.id===current);
+function addItem(p){
+const a=account();
 if(!a)return;
-const existing=a.items.find(i=>i.name===name&&i.price===price);
-if(existing)existing.qty++;
-else a.items.push({name,price,qty:1});
-save();
-renderDetail();
+const old=a.items.find(i=>i.productId===p.id&&i.price===p.price);
+if(old)old.qty++;
+else a.items.push({id:uid(),productId:p.id,name:p.name,price:p.price,qty:1});
+if(save())renderDetail();
 }
-
-function removeItem(index){
-const a=accounts.find(x=>x.id===current);
-if(!a)return;
-if(a.items[index].qty>1)a.items[index].qty--;
-else a.items.splice(index,1);
-save();
-renderDetail();
+function removeItem(id){
+const a=account();
+const i=a?.items.find(x=>x.id===id);
+if(!i)return;
+if(i.qty>1)i.qty--;
+else a.items=a.items.filter(x=>x.id!==id);
+if(save())renderDetail();
 }
-
-function closeAccount(){
-const a=accounts.find(x=>x.id===current);
+function showPayment(){
+const a=account();
+if(!a||!a.items.length)return alert("Agregá consumos primero.");
+$("amount").value=due(a);
+show("payment");
+}
+function hidePayment(){hide("payment");}
+function registerPayment(){
+const a=account();
 if(!a)return;
-if(!confirm("¿Cerrar la cuenta de "+a.name+" por "+money(accountTotal(a))+"?"))return;
-accounts=accounts.filter(x=>x.id!==current);
-save();
+const amount=Number($("amount").value);
+if(!Number.isSafeInteger(amount)||amount<=0||amount>due(a))
+return alert("Importe inválido o superior al saldo.");
+a.payments.push({amount,method:$("method").value,date:new Date().toISOString()});
+if(due(a)===0){
+db.accounts=db.accounts.filter(x=>x.id!==a.id);
+db.history.unshift({...a,closed:new Date().toISOString()});
+if(save()){
+alert("Cuenta cerrada. Total: "+money(total(a)));
 showHome();
 }
+}else if(save()){
+hidePayment();renderDetail();
+}
+}
+function cancelAccount(){
+const a=account();
+if(!a)return;
+if(a.payments.length)return alert("No se puede anular una cuenta con pagos registrados.");
+if(!confirm("¿Anular esta cuenta?"))return;
+db.accounts=db.accounts.filter(x=>x.id!==a.id);
+if(save())showHome();
+}
 
-showHome();
+function isToday(date){
+return new Date(date).toDateString()===new Date().toDateString();
+}
+function renderAdmin(){
+const today=db.history.filter(a=>isToday(a.closed));
+$("sales").textContent=money(today.reduce((s,a)=>s+total(a),0));
+$("closed").textContent=today.length;
+const payments=today.flatMap(a=>a.payments);
+$("cash").textContent=money(payments.filter(p=>p.method==="Efectivo").reduce((s,p)=>s+p.amount,0));
+$("electronic").textContent=money(payments.filter(p=>p.method==="Electrónico").reduce((s,p)=>s+p.amount,0));
+
+const counts={};
+today.forEach(a=>a.items.forEach(i=>{
+counts[i.name]=(counts[i.name]||0)+i.qty;
+}));
+const top=$("top");
+top.replaceChildren();
+Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10).forEach(([name,qty])=>{
+top.append(el("p",name+" — "+qty+" unidades"));
+});
+if(!top.children.length)top.append(el("p","Sin ventas cerradas hoy."));
+
+const history=$("history");
+history.replaceChildren();
+db.history.slice(0,30).forEach(a=>{
+history.append(el("p",a.name+" — "+money(total(a))+" — "+new Date(a.closed).toLocaleString("es-AR")));
+});
+if(!history.children.length)history.append(el("p","Sin cuentas cerradas."));
+
+const catalog=$("catalog");
+catalog.replaceChildren();
+db.products.forEach(p=>{
+const d=el("div");
+d.className="item";
+d.append(el("span",p.cat+" · "+p.name+" — "+money(p.price)));
+d.append(btn("Editar",()=>editProduct(p.id)));
+catalog.append(d);
+});
+}
+function editProduct(id=null){
+editing=id;
+const p=db.products.find(x=>x.id===id);
+$("pname").value=p?.name||"";
+$("pcategory").value=p?.cat||"";
+$("pprice").value=p?.price??"";
+show("editor");
+}
+function hideEditor(){hide("editor");editing=null;}
+function saveProduct(){
+const name=$("pname").value.trim();
+const cat=$("pcategory").value.trim();
+const price=Number($("pprice").value);
+if(!name||!cat||$("pprice").value===""||!Number.isSafeInteger(price)||price<0)
+return alert("Completá correctamente todos los campos.");
+const p=db.products.find(x=>x.id===editing);
+if(p)Object.assign(p,{name,cat,price});
+else db.products.push({id:uid(),name,cat,price});
+if(save()){hideEditor();renderAdmin();}
+}
+function exportData(){
+const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
+const url=URL.createObjectURL(blob);
+const a=el("a");
+a.href=url;
+a.download="baris-respaldo.json";
+document.body.append(a);
+a.click();
+a.remove();
+setTimeout(()=>URL.revokeObjectURL(url),3000);
+}
+$("name").addEventListener("keydown",e=>{
+if(e.key==="Enter")createAccount();
+});
+renderHome();
 </script>
 </body>
 </html>
