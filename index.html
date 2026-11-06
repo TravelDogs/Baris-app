@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BARIS | Gestión de barra</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f1eb;color:#252525;font-family:Arial,sans-serif}
+header{background:#242424;color:white;padding:20px;text-align:center}
+header h1{font-family:"Times New Roman",serif;font-size:42px;margin:0}
+header p{margin:5px;font-size:13px;color:#ccc}
+main{max-width:900px;margin:auto;padding:18px}
+button,input{font-size:16px}
+button{border:0;border-radius:8px;padding:12px;cursor:pointer}
+.primary{background:#252525;color:white}
+.secondary{background:#e3ded5}
+.danger{background:#a83232;color:white}
+.card{background:white;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #0001}
+input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;margin:10px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hidden{display:none}
+.tabs{display:flex;gap:8px;overflow:auto;margin:15px 0}
+.tabs button{white-space:nowrap}
+.active{background:#252525;color:white}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.product{background:#f1eee8;text-align:left;min-height:75px}
+.product small{display:block;margin-top:6px;color:#666}
+.account{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.total{font-size:24px;font-weight:bold}
+.item{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eee}
+@media(min-width:650px){.grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<header>
+<h1>BARIS</h1>
+<p>GESTIÓN DE BARRA</p>
+</header>
+
+<main>
+<section id="home">
+<div class="row">
+<h2 style="flex:1">Cuentas abiertas</h2>
+<button class="primary" onclick="showNew()">+ Nueva cuenta</button>
+</div>
+<div id="accounts"></div>
+</section>
+
+<section id="newAccount" class="card hidden">
+<h2>Abrir cuenta</h2>
+<input id="customerName" placeholder="Nombre del cliente">
+<div class="row">
+<button class="primary" onclick="createAccount()">Abrir cuenta</button>
+<button class="secondary" onclick="showHome()">Cancelar</button>
+</div>
+</section>
+
+<section id="detail" class="hidden">
+<button class="secondary" onclick="showHome()">← Volver</button>
+<div class="card">
+<h2 id="accountTitle"></h2>
+<div id="items"></div>
+<p class="total" id="total"></p>
+<button class="danger" onclick="closeAccount()">Cerrar cuenta</button>
+</div>
+<h3>Agregar consumo</h3>
+<div class="tabs" id="tabs"></div>
+<div class="grid" id="products"></div>
+</section>
+</main>
+
+<script>
+const menu={
+"Cervezas":[
+["Golden",4500],["IPA",5000],["American IPA",5200],
+["Session IPA",5000],["Stout",5000],["Roja",4800]
+],
+"Panchos":[
+["Clásico",4500],["Queso y cebolla",5000],
+["Panceta y queso",5500],["Roquefort",5500],
+["Chucrut",5000]
+],
+"Pizzas":[
+["Margarita",12000],["Papa",13000],
+["Champiñones",14000]
+],
+"Pierogis":[
+["Carne",9000],["Papa",8500],["Repollo",8500]
+],
+"Tragos":[
+["Fernet",6500],["Gin Tonic",7000],["Whisky",8000]
+],
+"Otros":[
+["Cerveza en botella",6000],["Vino",18000]
+]
+};
+
+let accounts=JSON.parse(localStorage.getItem("barisAccounts")||"[]");
+let current=null;
+let category="Cervezas";
+
+function save(){
+localStorage.setItem("barisAccounts",JSON.stringify(accounts));
+}
+
+function money(n){
+return "$"+n.toLocaleString("es-AR");
+}
+
+function hideAll(){
+document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+}
+
+function showHome(){
+current=null;
+hideAll();
+document.getElementById("home").classList.remove("hidden");
+renderAccounts();
+}
+
+function showNew(){
+hideAll();
+document.getElementById("newAccount").classList.remove("hidden");
+document.getElementById("customerName").value="";
+document.getElementById("customerName").focus();
+}
+
+function createAccount(){
+const name=document.getElementById("customerName").value.trim();
+if(!name){alert("Ingresá un nombre");return;}
+const id=Date.now();
+accounts.push({id,name,items:[]});
+save();
+openAccount(id);
+}
+
+function accountTotal(a){
+return a.items.reduce((sum,i)=>sum+i.price*i.qty,0);
+}
+
+function renderAccounts(){
+const box=document.getElementById("accounts");
+box.innerHTML="";
+if(!accounts.length){
+box.innerHTML='<div class="card">No hay cuentas abiertas.</div>';
+return;
+}
+accounts.forEach(a=>{
+const div=document.createElement("div");
+div.className="card account";
+const info=document.createElement("div");
+info.innerHTML="<strong></strong><br><small></small>";
+info.querySelector("strong").textContent=a.name;
+info.querySelector("small").textContent=money(accountTotal(a));
+const btn=document.createElement("button");
+btn.className="primary";
+btn.textContent="Abrir";
+btn.onclick=()=>openAccount(a.id);
+div.append(info,btn);
+box.appendChild(div);
+});
+}
+
+function openAccount(id){
+current=id;
+hideAll();
+document.getElementById("detail").classList.remove("hidden");
+renderDetail();
+renderMenu();
+}
+
+function renderDetail(){
+const a=accounts.find(x=>x.id===current);
+if(!a){showHome();return;}
+document.getElementById("accountTitle").textContent=a.name;
+const box=document.getElementById("items");
+box.innerHTML="";
+if(!a.items.length){
+box.textContent="Todavía no hay consumos.";
+}
+a.items.forEach((i,index)=>{
+const row=document.createElement("div");
+row.className="item";
+const label=document.createElement("span");
+label.textContent=i.qty+" × "+i.name+" — "+money(i.qty*i.price);
+const remove=document.createElement("button");
+remove.className="secondary";
+remove.textContent="−";
+remove.onclick=()=>removeItem(index);
+row.append(label,remove);
+box.appendChild(row);
+});
+document.getElementById("total").textContent="Total: "+money(accountTotal(a));
+}
+
+function renderMenu(){
+const tabs=document.getElementById("tabs");
+tabs.innerHTML="";
+Object.keys(menu).forEach(cat=>{
+const b=document.createElement("button");
+b.textContent=cat;
+b.className=cat===category?"active":"secondary";
+b.onclick=()=>{category=cat;renderMenu();};
+tabs.appendChild(b);
+});
+const grid=document.getElementById("products");
+grid.innerHTML="";
+menu[category].forEach(([name,price])=>{
+const b=document.createElement("button");
+b.className="product";
+b.innerHTML="<strong></strong><small></small>";
+b.querySelector("strong").textContent=name;
+b.querySelector("small").textContent=money(price);
+b.onclick=()=>addItem(name,price);
+grid.appendChild(b);
+});
+}
+
+function addItem(name,price){
+const a=accounts.find(x=>x.id===current);
+if(!a)return;
+const existing=a.items.find(i=>i.name===name&&i.price===price);
+if(existing)existing.qty++;
+else a.items.push({name,price,qty:1});
+save();
+renderDetail();
+}
+
+function removeItem(index){
+const a=accounts.find(x=>x.id===current);
+if(!a)return;
+if(a.items[index].qty>1)a.items[index].qty--;
+else a.items.splice(index,1);
+save();
+renderDetail();
+}
+
+function closeAccount(){
+const a=accounts.find(x=>x.id===current);
+if(!a)return;
+if(!confirm("¿Cerrar la cuenta de "+a.name+" por "+money(accountTotal(a))+"?"))return;
+accounts=accounts.filter(x=>x.id!==current);
+save();
+showHome();
+}
+
+showHome();
+</script>
+</body>
+</html>
